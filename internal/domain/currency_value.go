@@ -6,5 +6,3 @@ type CurrencyValue struct {
 	Value        float64 `json:"value"`
 	ErrorMessage string  `json:"errorMessage"`
 }
-
-type CurrencyValueResponse CurrencyValue
