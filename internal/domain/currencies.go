@@ -5,4 +5,7 @@ type Currency struct {
 	Description string `json:"description"`
 }
 
-type Currencies map[string]Currency
+type ActualCurrencies struct {
+	Currencies   map[string]Currency `json:"currencies"`
+	ErrorMessage string              `json:"errorMessage"`
+}

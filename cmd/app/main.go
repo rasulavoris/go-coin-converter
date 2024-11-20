@@ -3,16 +3,22 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"gocoinconverter/internal/application"
+	"gocoinconverter/internal/application/services/cacher"
+	"gocoinconverter/internal/application/services/converter"
 	"net/http"
 )
 
 func main() {
+	fmt.Println("Starting...")
+	var defineCache = cacher.DefineCache(30, 60)
+	var cacheService = cacher.NewCacheService(defineCache)
+	var converterService = converter.NewConverterService(cacheService)
+	fmt.Println("Initialized services...")
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		currencies := services.Currencies()
+		currencies := converterService.Currencies()
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -23,7 +29,6 @@ func main() {
 	})
 
 	mux.HandleFunc("GET /converter", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Converter!")
 		query := r.URL.Query()
 		fromCurrency := query.Get("fromCurrency")
 		toCurrency := query.Get("toCurrency")
@@ -34,7 +39,7 @@ func main() {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		err := json.NewEncoder(w).Encode(services.Convert(fromCurrency, toCurrency))
+		err := json.NewEncoder(w).Encode(converterService.Convert(fromCurrency, toCurrency))
 		if err != nil {
 			return
 		}
@@ -49,4 +54,5 @@ func main() {
 	if err != nil {
 		return
 	}
+
 }
