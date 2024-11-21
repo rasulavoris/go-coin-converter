@@ -5,6 +5,7 @@ import (
 	"gocoinconverter/internal/api"
 	"gocoinconverter/internal/application/services/cacher"
 	models "gocoinconverter/internal/domain"
+	"log"
 	"time"
 )
 
@@ -17,8 +18,7 @@ func NewConverterService(cacheService *cacher.CacheService) *ConverterService {
 }
 
 func (cs *ConverterService) Currencies() models.ActualCurrencies {
-	now := time.Now().Format("2024-01-01")
-
+	now := time.Now().Format("2006-1-2")
 	data, b := cs.cacheService.GetData(now)
 
 	if b {
@@ -36,7 +36,10 @@ func (cs *ConverterService) Currencies() models.ActualCurrencies {
 	rawCurrencies := api.ExternalCurrencies()
 	currencies := mapToCurrencies(rawCurrencies)
 
+	log.Print("Saving data into memcache...")
 	cs.cacheService.SaveData(now, currencies)
+	log.Print("Saving data into redis...")
+	cs.cacheService.SaveIntoRedis(now, currencies, 30)
 
 	return currencies
 }
@@ -49,7 +52,7 @@ func (cs *ConverterService) Convert(fromCurrency string, toCurrency string) mode
 	data, b := cs.cacheService.GetData(fromCurrency + toCurrency)
 
 	if b {
-		fmt.Println("Obtaining currency values data from memcache")
+		log.Print("Obtaining currency values data from memcache")
 		if obj, ok := data.(models.CurrencyValue); ok {
 			return obj
 		} else {
@@ -69,7 +72,10 @@ func (cs *ConverterService) Convert(fromCurrency string, toCurrency string) mode
 			Value:        coinValues[toCurrency],
 		}
 
+		log.Print("Saving data into memcache...")
 		cs.cacheService.SaveData(fromCurrency+toCurrency, response)
+		log.Print("Saving data into redis...")
+		cs.cacheService.SaveIntoRedis(fromCurrency+toCurrency, response, 30)
 
 		return response
 	}

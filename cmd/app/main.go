@@ -10,10 +10,15 @@ import (
 
 func main() {
 	fmt.Println("Starting...")
+
+	fmt.Println("-----[Initialized redis...]-----")
+	redisClient := cacher.InitRedisConnection()
+
+	fmt.Println("-----[Initialized services...]-----")
 	var defineCache = cacher.DefineCache(30, 60)
-	var cacheService = cacher.NewCacheService(defineCache)
+	var cacheService = cacher.NewCacheService(defineCache, redisClient)
 	var converterService = converter.NewConverterService(cacheService)
-	fmt.Println("Initialized services...")
+	fmt.Println("Services started")
 
 	mux := http.NewServeMux()
 
@@ -55,4 +60,5 @@ func main() {
 		return
 	}
 
+	redisClient.Close()
 }
